@@ -1,0 +1,234 @@
+---
+title: "Why open-source data works: from tweets to planning"
+author: "Siddhesh R. Kudale"
+date: '2022-08-30'
+output: html_document
+---
+
+# Introduction
+
+In contemporary literature, there have been allusions to and seldom examination of using open source data from social-media sites for use in urban planning studies: especially in the global south. What hinders this use depends on a multiplicity of parameters ranging from availability of social media to the masses and English literacy, the latter half of which however is not essential. So far as field-work within Urban Planning projects or even secondary data collection goes, there are many limitations including human labour, lack of funding, digitisation of data, predetermining a process, non-cooperation of government structures, and such others. 
+
+On the other hand, in the field of communication sciences, there are some techniques that are widely used for political campaign analysis, especially often also geolocating these at lat-long coordinates. These studies have mostly had their roots in a very media and tech savvy west to be fair: yet it cannot be denied that these techniques are fairly replicable regardless of the context unlike some Urban analysis techniques. These techniques include twitter data mining, reddit data analysis, Facebook response analysis and others of the like. They have their own shortcomings and drawbacks, however one of which that cannot be denied is their efficiency with time with access to the right expertise. And speaking about the right expertise, India is factually a hub for smart engineers that can be useful especially with such coding oriented tasks as twitter data and its analysis.
+
+The key aspect to working with twitter data is the open-source nature of this data, something which is essential for Indian urban development. With the lack of resources and a rapidly advancing urban setting, India is stuck with limited-access shape-files with third-parties and  essential research behind paywalls, something which only favours a capitalistic society. There are many other sources of open-source data, something like Uber-movement data for some metropolitan cities for instance, though the validity of much of the available open-source data is highly questionable. 
+
+When it comes to open-source data, there is also a community of open-source tools and techniques that come alongside - why pay lakhs of rupees for a software like ArcGIS Pro, which is marked at a San Bernardino retail price, when you can go for a quick and free download of QGIS? Why not go for coding languages that are meant to make life easier especially in a so-called famously ‘poor’ third-world country? Though India is one of the fastest growing economies, the dearth of resources especially with respect to data and data collection mechanisms does lag our progress in many aspects, which is not necessarily limited to urban planning practice or education. 
+
+Now then, one may ask is how does this help planners, especially as alleged here in the Indian context? The answer to this is simple. With the onset of cheap internet and especially covid, the Indian masses have been, to put it subtly, pressured to be savvy with technology in unforeseen ways. Whether it be zoom for students even in poor households to grocery delivery mechanisms in more urban and middle class settings. What planners in most cities could do is to encourage online participation for the masses on their own social media pages, where an audience stuck at work or other chores in the same timings as the participation meetings, probably unable to physically attend meetings due to other bindings where getting food on the table is more important: can virtually provide their reactions to progresses and actions taken by planners and politicians from time-to-time, or even in real time. This is not meant to, in any way, undermine the standard process of public participation that is followed rather commendably by many of the corporations and development authorities, but to merely compliment the process in a constructive manner, saving considerable time, manpower and stress in this process. Lastly, something as social media allows people to interact without class divisions and filters, especially when analysed by automated systems: once the names of the tweeters are removed from the dataset for example, there are no businessmen or rich individuals, but just anonymous Jane and John Does, whose say matters regardless of the power they may be able to wield, at the same time as them being as honest about their responses as they can - which for instance may not be possible in an in-person context. 
+
+Yet, there are some essential limitations that need to be understood and addressed: the first thing being that India, or any particular urban setting in the Indian context for that matter, is a multi-cultural and hence a multi-lingual mashup of responses, sometimes this even using multiple scripts. While most responses on such platforms would be expected to be either in pure English or in local languages exclusively, the possibilities of mixing the two cannot be overlooked, in a colloquial formats knows as Hinglish or such others. Such data is hard to analyse, even manually. Furthermore, in cities such as Mumbai where the responses are usually in a span of three languages: Hindi, Marathi and English, two primary languages share the same scripts, something which even the automated intelligence may not be able to tell apart, unless there is advanced sorting and manual interference involved. One more issue that could crop up is the issue of ignorance: many traditional corporations may from time to time forget to check/analyse their social media, due to various reasons ranging from lack of manpower to mere laziness, for which, it would be essential to work out a standard regimen as to how these authorities could go about utilising such a resource to its benefit. The baseline is: this work is not cakewalk - but then again, what aspect of a planner’s job description is?
+
+In conclusion, this paper shall deal with the benefits and demerits of integrating systems of social communication into urban planning and go over the possible avenues to set up such a system and make it into a complimentary tool essential for reaching directly and tactfully to the end-user from the planning authority and vice-versa. Further criticism of this work will be always appreciated for a continuous discourse. 
+
+```{r, include=FALSE}
+#Installing essential packages
+options(repos = list(CRAN="http://cran.rstudio.com/"))
+install.packages("rtweet")
+install.packages("ggthemes")
+install.packages("tm")
+install.packages("openssl")
+install.packages("wordcloud")
+install.packages("RColorBrewer")
+install.packages("wordcloud2")
+install.packages("tidytext")
+install.packages("writexl")
+
+#Installing libraries
+library(tidytext)
+library(rtweet)
+library(tm)
+library(dplyr)
+library(tidyr)
+library(data.table)
+library(ggplot2)
+library(ggthemes)
+library(openssl)
+library(wordcloud)
+library(RColorBrewer)
+library(wordcloud2)
+library(writexl)
+library(stringr)
+```
+
+```{r, include = FALSE}
+#Installing the Twitter user key and permissions
+creds <- read.csv('twitter_creds.csv', header = FALSE)
+api_key <- creds$api_key
+api_secret_key <- creds$api_secret
+access_token <- creds$access_token 
+access_secret <- creds$access_token_secret
+token <- create_token(app = "datatrials",
+  consumer_key = api_key,
+  consumer_secret = api_secret_key,
+  access_token = access_token,
+  access_secret = access_secret)
+```
+
+```{r, include=FALSE}
+#Importing twitter Data
+chg <- search_tweets(
+  "@chicago",n=4000,include_rts = FALSE,retryonratelimit=T)
+chg <- read_xlsx(chg, "chm.xlsx") ## City of Chicago
+
+chgsm <- search_tweets(
+  "@chicagosamir",n=4000,include_rts = FALSE,retryonratelimit=T)
+write_xlsx(chgsm, "chgsm.xlsx") ## Dty. Mayor of Economic and Neighborhood Development, Samir Mayekar
+chgsm <- read_xlsx(chgsm, "chgsm.xlsx")
+
+cta <- search_tweets(
+  "@cta",n=4000,include_rts = FALSE,retryonratelimit=T)
+cta <-  read_xlsx(cta, "cta.xlsx") ## Chicago Transit Agency
+
+cp <- search_tweets(
+  "@Chicago_Police",n=4000,include_rts = FALSE,retryonratelimit=T)
+cp <- read_xlsx(cp, "cp.xlsx") ## Chicago Transit Agency
+
+install.packages('gdata')
+library(gdata)
+tweets <- combine(chg, chgsm, cp, cta)
+```
+
+```{r, include = FALSE}
+gsub("https\\S*", "", tweets$full_text) 
+gsub("@\\S*", "", tweets$full_text) 
+gsub("amp", "", tweets$full_text) 
+gsub("[\r\n]", "", tweets$full_text)
+gsub("[[:punct:]]", "", tweets$full_text)
+```
+
+```{r, include = FALSE}
+#Sorting the text
+text <- tweets$text
+docs <- Corpus(VectorSource(text))
+
+docs <- docs %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace)
+docs <- tm_map(docs, content_transformer(tolower))
+docs <- tm_map(docs, removeWords, stopwords("english"))
+
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+df <- df[-c(1), ]
+write_xlsx(df, "wordschicago.xlsx")
+```
+
+# Aim and Objectives 
+
+The idea is to check the interest of the general public in urban development issues, and participation. Twitter is a good resourse where people love to talk and report their experiences with everything, similar to which I will be trying to understand people's experiences with urban development issues and their responses here.
+
+# Research Question
+
+# Data and availability
+
+# Objectives
+
+```{r, echo = FALSE}
+wordcloud2(data=df, size=3.6, color='random-dark')
+```
+```{r, echo=FALSE}
+tweets_app <- tweets %>% 
+  select(source) %>% 
+  group_by(source) %>%
+  summarize(count=n())
+tweets_app<- subset(tweets_app, count > 11) %>% 
+  extract(source, "source", ">(.*?)<")
+
+data <- data.frame(
+  category=tweets_app$source,
+  count=tweets_app$count
+)
+data$fraction = data$count / sum(data$count)
+data$percentage = data$count / sum(data$count) * 100
+data$ymax = cumsum(data$fraction)
+data$ymin = c(0, head(data$ymax, n=-1))
+data$percentage <- round(data$percentage)
+Source <- paste(data$category, data$percentage, "%")
+ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Source)) +
+  geom_rect() +
+  coord_polar(theta="y") + 
+  scale_fill_brewer(palette=1) +
+  scale_color_brewer(palette=1) +
+  xlim(c(2, 4)) +
+  theme_void() +
+  theme(legend.position = "right") +
+  labs(title = "Distribution of devices used to post tweets onto Chicago Agency Pages")
+```
+
+```{r, echo=FALSE}
+df <- df %>% 
+  arrange(desc(freq)) %>% 
+  head(25) 
+ggplot(df, aes(x = freq, y = word)) + geom_col() + theme_bw() + labs(title = "Most frequent words found in the tweets of Chicago Agencies")
+```
+
+```{r, echo=FALSE}
+install.packages("syuzhet")
+library(syuzhet)
+tweets <- iconv(tweets, from="UTF-8", to="ASCII", sub="")
+tweets <-gsub("(RT|via)((?:\\b\\w*@\\w+)+)","",tweets)
+tweets <-gsub("@\\w+","",tweets)
+ew_sentiment<-get_nrc_sentiment((tweets))
+sentimentscores<-data.frame(colSums(ew_sentiment[,]))
+names(sentimentscores) <- "Score"
+sentimentscores <- cbind("sentiment"=rownames(sentimentscores),sentimentscores)
+rownames(sentimentscores) <- NULL
+ggplot(data=sentimentscores,aes(x=sentiment,y=Score))+
+  geom_bar(aes(fill=sentiment),stat = "identity")+
+  theme(legend.position="none")+
+  xlab("Sentiments")+ylab("Scores")+
+  ggtitle("Total sentiment based on scores")+
+  theme_minimal()
+```
+
+```{r, include=FALSE}
+tweetsgeo <- lat_lng(tweets)
+tweetsgeo %>%
+  filter(!is.na(lat) & !is.na(lng))
+```
+
+```{r, echo=FALSE}
+library(leaflet)
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data = tweetsgeo, 
+                   radius = 2, 
+                   popup = ~text)
+
+write_xlsx(tweetsgeo, "tweetsgeo.xlsx")
+```
+
+
+![Example output Cloud image]("Cloud.png")
+
+# Mumbai
+
+```{r, echo=FALSE}
+mum <- search_tweets(
+  "@mybmc",n=4000,include_rts = FALSE,retryonratelimit=T)
+
+mumgeo <- lat_lng(mum)
+mumgeo %>%
+  filter(!is.na(lat) & !is.na(lng)) %>%
+  nrow()
+
+library(leaflet)
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data = mumgeo, 
+                   radius = 2, 
+                   popup = ~text)
+write_xlsx(mumgeo, "mumgeo.xlsx")
+```
+
+-------------
+
+### Sources/References
+
+https://github.com/aaronmams/rHD-Vignette-Text-Mining/blob/master/Twitter-Scraping-Example.Rmd
+
+https://towardsdatascience.com/create-a-word-cloud-with-r-bde3e7422e8a

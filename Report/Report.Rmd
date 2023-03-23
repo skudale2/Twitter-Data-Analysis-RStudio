@@ -1,0 +1,308 @@
+---
+title: "Why open-source data works: from tweets to planning"
+author: "Siddhesh R. Kudale"
+date: "2022-08-30"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# 1. Introduction
+
+In contemporary literature, there have been allusions to and seldom examination of using open source data from social-media sites for use in urban planning studies: especially in the global south. What hinders this use depends on a multiplicity of parameters ranging from availability of social media to the masses and English literacy, the latter half of which however is not essential. So far as field-work within Urban Planning projects or even secondary data collection goes, there are many limitations including human labour, lack of funding, digitisation of data, predetermining a process, non-cooperation of government structures, and such others. 
+
+On the other hand, in the field of communication sciences, there are some techniques that are widely used for political campaign analysis, especially often also geolocating these at lat-long coordinates. These studies have mostly had their roots in a very media and tech savvy west to be fair: yet it cannot be denied that these techniques are fairly replicable regardless of the context unlike some Urban analysis techniques. These techniques include twitter data mining, reddit data analysis, Facebook response analysis and others of the like. They have their own shortcomings and drawbacks, however one of which that cannot be denied is their efficiency with time with access to the right expertise. And speaking about the right expertise, India is factually a hub for smart engineers that can be useful especially with such coding oriented tasks as twitter data and its analysis.
+
+The key aspect to working with twitter data is the open-source nature of this data, something which is essential for Indian urban development. With the lack of resources and a rapidly advancing urban setting, India is stuck with limited-access shape-files with third-parties and  essential research behind paywalls, something which only favours a capitalistic society. There are many other sources of open-source data, something like Uber-movement data for some metropolitan cities for instance, though the validity of much of the available open-source data is highly questionable. 
+
+When it comes to open-source data, there is also a community of open-source tools and techniques that come alongside - why pay lakhs of rupees for a software like ArcGIS Pro, which is marked at a San Bernardino retail price, when you can go for a quick and free download of QGIS? Why not go for coding languages that are meant to make life easier especially in a so-called famously ‘poor’ third-world country? Though India is one of the fastest growing economies, the dearth of resources especially with respect to data and data collection mechanisms does lag our progress in many aspects, which is not necessarily limited to urban planning practice or education. 
+
+Now then, one may ask is how does this help planners, especially as alleged here in the Indian context? The answer to this is simple. With the onset of cheap internet and especially covid, the Indian masses have been, to put it subtly, pressured to be savvy with technology in unforeseen ways. Whether it be zoom for students even in poor households to grocery delivery mechanisms in more urban and middle class settings. What planners in most cities could do is to encourage online participation for the masses on their own social media pages, where an audience stuck at work or other chores in the same timings as the participation meetings, probably unable to physically attend meetings due to other bindings where getting food on the table is more important: can virtually provide their reactions to progresses and actions taken by planners and politicians from time-to-time, or even in real time. This is not meant to, in any way, undermine the standard process of public participation that is followed rather commendably by many of the corporations and development authorities, but to merely compliment the process in a constructive manner, saving considerable time, manpower and stress in this process. Lastly, something as social media allows people to interact without class divisions and filters, especially when analysed by automated systems: once the names of the tweeters are removed from the dataset for example, there are no businessmen or rich individuals, but just anonymous Jane and John Does, whose say matters regardless of the power they may be able to wield, at the same time as them being as honest about their responses as they can - which for instance may not be possible in an in-person context. 
+
+Yet, there are some essential limitations that need to be understood and addressed: the first thing being that India, or any particular urban setting in the Indian context for that matter, is a multi-cultural and hence a multi-lingual mashup of responses, sometimes this even using multiple scripts. While most responses on such platforms would be expected to be either in pure English or in local languages exclusively, the possibilities of mixing the two cannot be overlooked, in a colloquial formats knows as Hinglish or such others. Such data is hard to analyse, even manually. Furthermore, in cities such as Mumbai where the responses are usually in a span of three languages: Hindi, Marathi and English, two primary languages share the same scripts, something which even the automated intelligence may not be able to tell apart, unless there is advanced sorting and manual interference involved. One more issue that could crop up is the issue of ignorance: many traditional corporations may from time to time forget to check/analyse their social media, due to various reasons ranging from lack of manpower to mere laziness, for which, it would be essential to work out a standard regimen as to how these authorities could go about utilising such a resource to its benefit. The baseline is: this work is not cakewalk - but then again, what aspect of a planner’s job description is?
+
+In conclusion, this paper shall deal with the benefits and demerits of integrating systems of social communication into urban planning and go over the possible avenues to set up such a system and make it into a complimentary tool essential for reaching directly and tactfully to the end-user from the planning authority and vice-versa. Further criticism of this work will be always appreciated for a continuous discourse. 
+
+```{r, include=FALSE}
+#Installing libraries
+library(tidytext)
+library(rtweet)
+library(knitr)
+library(tm)
+library(dplyr)
+library(tidyr)
+library(data.table)
+library(ggplot2)
+library(ggthemes)
+library(openssl)
+library(wordcloud)
+library(RColorBrewer)
+library(wordcloud2)
+library(writexl)
+library(stringr)
+library(readxl)
+```
+
+# 2. Aim, Objectives and Research Question
+
+The idea is to check the interest of the general public in urban development issues, and participation. Twitter is a good resource where people love to talk and report their experiences with everything, similar to which I will be trying to understand people's experiences with urban development issues and their responses here.
+
+Hence, the objective of the project is to explore popular opinion about urban development issues in the context of Chicago, and comparatively in Mumbai, and to check if people want to participate in public interest issues over social media unlike regular planning participation.
+
+In the same line, the research question that is pertinent to this cause follows the following evolutionary sequence - Is social media used in planning as a communication/participation tool? The answer to which, is that we are still stuck with Facebook and Physical mail. The next part of this process is what if we check twitter? And based on twitter data, the further analysis shall be charted out.
+
+# 3. Literature on Participation
+
+When talking about participation, Arnstein (1969) is a seminal work discussing about the spectrum or ladder of participation, which ranges participation on a scale from Citizen power to Non-participation. However, in the past decade, there have been frequent technological advancements in the general populace, the modes of communication advancing from newspapers to social media. Along the same lines, the public sector also needs to grow to embrace these new modes and methods of communication/participation. 
+
+Traditional urban planning participation includes dated physical methods involving surveys, interviews, case studies, group discussions, public meetings, open house, workshops, and such other methods, which end up not completely fulfilling the citizen's needs nor sufficiently account for advancement in the 21st century (Brenner, Marcuse, & Mayer, 2012; Resch et. al., 2016). In more recent case studies, there has been sporadic work on integrating twitter participation into urban planning, with recent works by Kovacs-Gyori et. al. (2017) in London,  Roberts et. al. (2017) in Birmingham, García-Palomares et. al. (2018) in Madrid, Plunz et. al. (2019) in New York City and Milusheva et. al. (2021) in Nairobi, of which the latest one is the only study observing patterns in a developing context. Research is severely lacking in both the Global North and South contexts, regardless of location, but more so in the latter. 
+
+Most of these studies work with a general dataset, for example being from a span of two consecutive years, geotagged tweets only, english language only data, and so forth. These have their own drawbacks, but the data cleaning process for these operations within itself is a tedious task. In the case of developing contexts however, there shall be more constraints with respect to languages, coding (or rather de-coding) barriers, data reach, et. cetera. Despite these barriers, it is essential to delve deeper and find avenues to reserach more in the given area. In line with the same, this study undertakes and example from the city of Chicago, and uses clean data to map people's involvement, and compares it to the context of Mumbai. 
+
+
+# 4. Data and availability 
+
+In terms of data availability, since this is twitter (croudsourced) data, it was one of the best bets for gathering data in a data-deficient context as the global south. Furthermore, larger population sizes in the city of Mumbai especially led to more number of data points on the map and hence a higher possibility of geolocation. The most important part of this data however is its ability to be assigned to a coordinate, which reveals further spatial information about that context area. 
+
+While the availability of data as a resource is a boon, the cleaning is a bane. While a majority of the tweets lacking relevant geolocation data, there remains only a fraction of the data that is usable for this purpose as Urban participation. For the purposes of this study, data was collected from a two week stretch from September 2022, from multiple handles for Chicago and for the @mybmc handle for Mumbai. 
+
+```{r}
+table1 <- data.frame(c1 = c('City of Chicago','Chicago Deputy Mayor', 'Chicago Transit Agency', 'Chicago Police', 'Total'), c2 = c('@chicago', '@chicagosamir', '@cta', '@chicago_police', NA), c3 = c(322, 130, 712, 399, 1563))
+
+colnames(table1) <- c('Name of Page', 'Twitter Handle', 'Number of tweets in two weeks')
+
+knitr::kable(head(table1), "simple", caption = "1: Data description, Chicago")
+```
+
+The reason why focussed data from these particular pages was considered is that the considered pages are directly associated with the planning activity for the city of Chicago. Furthermore, the data being from just a two week span gives us a good enough sample to draw a preliminary comparative analysis, though data set from longer time periods can give a deeper insight for any particular city especially as is used in most of the literature. A wide array of data from the city would, in a practical context: never be considered by inexperienced or rather usually lethargic public sector planners, let alone from such a long duration in order to resolve a trivial issue. Hence, the data frame trims down directly to users whose data is directly in the hands of these municipal entity's pages. 
+
+For context, the collated data for the city of Chicago garnered 1563 tweets, of which 106 (6.78%) tweets were geolocated. For the city of Mumbai, for the single @mybmc page, more than 4000 tweets were logged for the same two week time span. Of the 4000 (upperlimit) tweets selected by code, 564 (14.1%) tweets were geolocated. The data from the city of Mumbai was in multiple languages (viz. a mix of Hindi, Marathi and English, with variants of the vernacular languages found scripting in both Devanagari and Latin characters), and hence was a harder nut to crack, hence only a geolocation analysis was conducted on the same. 
+
+# 5. Data Analysis and Visualisation
+
+```{r, eval=FALSE}
+#Importing twitter Data
+chg <- search_tweets(
+  "@chicago",n=4000,include_rts = FALSE,retryonratelimit=T) ## City of Chicago
+
+chgsm <- search_tweets(
+  "@chicagosamir",n=4000,include_rts = FALSE,retryonratelimit=T)
+write_xlsx(chgsm, "chgsm.xlsx") ## Dty. Mayor of Economic and Neighborhood Development, Samir Mayekar
+
+cta <- search_tweets(
+  "@cta",n=4000,include_rts = FALSE,retryonratelimit=T) ## Chicago Transit Agency
+
+cp <- search_tweets(
+  "@Chicago_Police",n=4000,include_rts = FALSE,retryonratelimit=T) ## Chicago Police
+
+# Combining tweets from all the pages
+tweets <- combine(chg, chgsm, cp, cta)
+
+# Sorting the text
+text <- tweets$text
+docs <- Corpus(VectorSource(text))
+
+docs <- docs %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace)
+docs <- tm_map(docs, content_transformer(tolower))
+docs <- tm_map(docs, removeWords, stopwords("english"))
+
+dtm <- TermDocumentMatrix(docs) 
+matrix <- as.matrix(dtm) 
+words <- sort(rowSums(matrix),decreasing=TRUE) 
+df <- data.frame(word = names(words),freq=words)
+df <- df[-c(1), ]
+```
+
+Using the above code, tweets were collected for the city of Chicago. Since all tweets in the city were in English language and Latin alphabet, it was easier to clean this data using the built in packages in R. The stop words were removed from the dataset, and a clean data of 1563 tweets was extracted. Of these tweets, for the sentiment analysis, words were separated and arranged according to word frequency usage, based on which further analysis was conducted. 
+
+### 5.1. Analysis 1: Word cloud
+
+```{r, eval=FALSE}
+# Analysis 1: Word cloud
+wordcloud2(data=df, size=3.6, color='random-dark')
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("Fulltext_Cloud.png")
+```
+
+A wordcloud of the given data gives broad areas that need focus in the city: in this case it is the Train/Trains, Bus and People. A wordcloud also Informs/Gives feedback to alter budgets to go into given sectors and associated project formulation. Some Highlight topics for social change in this cloud include: Cops, CTA-fails, CIA/FBI. Though not academically acceptable, it is a good practice for getting a quick understanding of ever changing issues in modern urban contexts/cities.
+
+### 5.2. Analysis 2: Word frequency
+
+```{r, eval=FALSE}
+# Analysis 2: Word frequency
+df <- df %>% 
+  arrange(desc(freq)) %>% 
+  head(25) 
+ggplot(df, aes(x = freq, y = word)) + geom_col() + theme_bw() + labs(title = "Most frequent words found in the tweets of Chicago Agencies")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("wirds.png")
+```
+
+This analysis gives variant results, a slight deviation from the word-cloud. It gives clear idea that people in Chicago are more interested in what the police does rather than city issues - does that mean the police should reduce policing? The data gathered also seems to be a little skewed due to elections in the given time period, eg. #govpritzker. Some tags do not make sense, will need detailed checking: Why are Chicagoans interested in unhumanrights and scidiplomacyusa, interpolhq and Ukraine? However, what we also need to see is: Do urban planners have concern for these issues? Maybe yes, maybe not - answer, subjective. It depends on if it affects urban settings or the city directly.
+
+### 5.3. Analysis 3: Source
+
+```{r, eval=FALSE}
+# Analysis 3: Source
+tweets_app <- tweets %>% 
+  select(source) %>% 
+  group_by(source) %>%
+  summarize(count=n())
+tweets_app<- subset(tweets_app, count > 11) %>% 
+  extract(source, "source", ">(.*?)<")
+
+data <- data.frame(
+  category=tweets_app$source,
+  count=tweets_app$count
+)
+data$fraction = data$count / sum(data$count)
+data$percentage = data$count / sum(data$count) * 100
+data$ymax = cumsum(data$fraction)
+data$ymin = c(0, head(data$ymax, n=-1))
+data$percentage <- round(data$percentage)
+Source <- paste(data$category, data$percentage, "%")
+ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Source)) +
+  geom_rect() +
+  coord_polar(theta="y") + 
+  scale_fill_brewer(palette=1) +
+  scale_color_brewer(palette=1) +
+  xlim(c(2, 4)) +
+  theme_void() +
+  theme(legend.position = "right") +
+  labs(title = "Distribution of devices used to post tweets onto Chicago Agency Pages")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("source.png")
+```
+
+Though barely useful from an urban planning standpoint, but still gives some information. Incomes v/s level of participation - do iPhone users have better affordability and hence participate more/are more invested in urban affairs? If 22% users use twitter through their web- app, are they stuck at work to attend a participation meeting physically? Can we still involve these individuals’ voices in city planning, instead of the flow going from the public ➡ twitter ➡ politicians ➡ planners ➡ action?
+
+### 5.4. Analysis 4: Sentiment
+
+```{r, eval=FALSE}
+# Analysis 4: Sentiment
+library(syuzhet)
+tweets <- iconv(tweets, from="UTF-8", to="ASCII", sub="")
+tweets <-gsub("(RT|via)((?:\\b\\w*@\\w+)+)","",tweets)
+tweets <-gsub("@\\w+","",tweets)
+ew_sentiment<-get_nrc_sentiment((tweets))
+
+sentimentscores<-data.frame(colSums(ew_sentiment[,]))
+names(sentimentscores) <- "Score"
+
+sentimentscores <- cbind("sentiment"=rownames(sentimentscores),sentimentscores)
+rownames(sentimentscores) <- NULL
+ggplot(data=sentimentscores,aes(x=sentiment,y=Score))+
+  geom_bar(aes(fill=sentiment),stat = "identity")+
+  theme(legend.position="none")+
+  xlab("Sentiments")+ylab("Scores")+
+  ggtitle("Total sentiment based on scores")+
+  theme_minimal()
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("Rplot.png")
+```
+
+We see a balance of sentiments. What is surprising is the sentiment of trust exhibited by people in all the four sources of tweets analysed. However, there is a considerably high share of fear, anticipation and anger amongst people. This could be due to their issues not being addressed.
+
+### 5.5. Analysis 5: Geolocation
+
+```{r, include = FALSE}
+tweetsgeo <- read_xlsx("tweetsgeo.xlsx")
+mumgeo <- read_xlsx("mumgeo.xlsx")
+```
+
+```{r, eval=FALSE}
+# Analysis 5: Geolocation (Chicago)
+tweetsgeo <- lat_lng(tweets)
+tweetsgeo %>%
+  filter(!is.na(lat) & !is.na(lng))
+```
+
+```{r, echo=TRUE}
+library(leaflet)
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data = tweetsgeo, 
+                   radius = 2, 
+                   popup = ~text) %>% 
+  fitBounds(lat1 = 42.153895, 
+          lng1 = -88.257715, 
+          lat2 = 41.577274, 
+          lng2 = -87.525626)
+```
+
+This being the most important analysis of all, gives a spatial idea of the expanse of the issues and also an exact pinpointed location to perform further work on the idea. This gap in participation is quickly bridged by such a geolocation analysis. However, for the city of chicago, there is not as detailed of a problem-solving situation as is visible in the case of Mumbai further. 
+
+### 5.6. Exploratory Geolocation Analysis, Mumbai
+
+```{r, eval=FALSE}
+# Exploratory Geolocation Analysis, Mumbai
+mum <- search_tweets(
+  "@mybmc",n=4000,include_rts = FALSE,retryonratelimit=T)
+
+mumgeo <- lat_lng(mum)
+mumgeo %>%
+  filter(!is.na(lat) & !is.na(lng)) %>%
+  nrow()
+```
+
+```{r, echo=TRUE}
+library(leaflet)
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data = mumgeo, 
+                   radius = 2, 
+                   popup = ~text) %>% 
+    fitBounds(lat1 = 19.262460, 
+          lng1 = 72.704173, 
+          lat2 = 18.888930,
+          lng2 =  73.066014)
+```
+
+This data gives a variety of results. While the language barrier is still a hindrance, a simple geolocation tells us the different issues of the people within the past 2 weeks, something which can be supplemented by a manual supplimentary validation of the issue before resolution, and hence being a more sophisticated and a more dependable method for conflict resolution and decision making as is the requirement of urban planning expertise. 
+
+# 6. Inferences: Does twitter data have the power to inform planning decisions?
+
+A simple answer is, yes. Some ways how include assisting in planning decisions, Aiding excluded people to participate in city-planning virtually, especially since almost everyone has a smartphone and a twitter account in today’s date. Will help city planning stay up-to-date with real-time issues faced by people in the city and foster a closer bond between the citizens and urban planners. (Will save planners from getting shouted at/thrown shoes at like in public meetings, since angry comments on social media would be better and more civil than in person?)
+
+# 7. Learnings and challenges: Why is it more relevant in the developing world
+
+Especially useful in the developing world since there is always lack of data on public sector issues.Ease of response mechanisms will help cities aid systematic issues as well. Some challenges could be: 
+  + Citizens not geotagging tweets when raising issues, Lack of reach due to lack of advertisement and reach of city corporations/MPOs
+  + Maybe used as development pitches/propaganda by politicians, 
+  + Need to weed tweets and not let credit be stolen,
+  + Issue with multi-lingual responses over twitter
+
+-------------
+
+## Sources/References
+
+https://github.com/aaronmams/rHD-Vignette-Text-Mining/blob/master/Twitter-Scraping-Example.Rmd
+
+https://towardsdatascience.com/create-a-word-cloud-with-r-bde3e7422e8a
+
+Arnstein, S. (1969) A ladder of citizen participation. Journal of the American Planning Association, 35(4), 216–224.
+
+Brenner, N., Marcuse, P., & Mayer, M. (2012) Cities for people, not for profit: Critical urban theory and the right to the city. London and New York: Routledge.
+
+García-Palomares, J. C., Salas-Olmedo, M. H., Moya-Gómez, B., Condeço-Melhorado, A., & Gutiérrez, J. (2018) City dynamics through Twitter: Relationships between land use and spatiotemporal demographics. Cities, Volume 72, Part B, February 2018, Pages 310-319. DOI: 10.1016/j.cities.2017.09.007
+
+Kovacs-Gyori, A., Ristea, A., Havas, C., Resch B., & Cabrera-Barona, P. (2017) #London2012: Towards Citizen-Contributed Urban Planning Through Sentiment Analysis of Twitter Data. Urban Planning, Volume 3, Issue 1, Pages 75–99. DOI: 10.17645/up.v3i1.1287
+
+Milusheva, S., Marty, R., Bedoya, G., Williams, S., Resor, E., & Legovini, A. (2021) Applying machine learning and geolocation techniques to social media data (Twitter) to develop a resource for urban planning. PLoS ONE 16(2): e0244317. DOI: 10.1371/journal.pone.0244317 
+
+Plunz, R. A., Zhou, Y., Carrasco Vintimilla, M. I., Mckeown, K., Yud, T., Uguccioni, L., & Sutto, M. P. (2019) Twitter sentiment in New York City parks as measure of well-being. Landscape and Urban Planning, Volume 189, September 2019, Pages 235-246. DOI: 10.1016/j.landurbplan.2019.04.024
+
+Resch, B., Summa, A., Zeile, P. & Strube, M. (2016) Citizen-Centric Urban Planning through Extracting Emotion Information from Twitter in an Interdisciplinary Space-Time-Linguistics Algorithm. Urban Planning, Volume 1, Issue 2, Pages 114-127. DOI: 10.17645/up.v1i2.617
+
+Roberts, H., Resch, B., Sadler, J., Chapman, L., Petutschnig, A., & Zimmer, S. (2017) Investigating the Emotional Responses of Individuals to Urban Green Space Using Twitter Data: A Critical Comparison of Three Different Methods of Sentiment Analysis. Urban Planning, Volume 3, Issue 1, Pages 21–33. DOI: 10.17645/up.v3i1.1231
